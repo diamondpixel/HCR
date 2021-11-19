@@ -2,14 +2,11 @@ package takys.Util;
 
 import org.bukkit.*;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffectType;
@@ -17,18 +14,21 @@ import takys.FileHandler;
 import takys.PlayerObj;
 import takys.Setup;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.*;
 
 public class Utilities implements Listener {
 
+
+    private final Setup setup = Setup.instance;
 
     public static List DeadPlayers = new ArrayList();
     public static List trimmedPlayers = new ArrayList();
     public static NamespacedKey key;
     public static ItemStack token;
+    //public static List deadPlayers = new ArrayList();
 
     public static ItemStack getPlayer(PlayerObj pObj) {
             Player player = Bukkit.getPlayer(pObj.GetUUID());
@@ -68,21 +68,6 @@ public class Utilities implements Listener {
                 return false;
             }
             return true;
-        }
-        public ItemStack createItem(Material material, String name) {
-            ItemStack item = new ItemStack(material, 1);
-            ItemMeta itemMeta = item.getItemMeta();
-            itemMeta.setDisplayName(name);
-            item.setItemMeta(itemMeta);
-            return item;
-        }
-
-        public ItemStack createItemWithData(Material material, String name, int data) {
-            ItemStack item = new ItemStack(material, 1, (short) data);
-            ItemMeta itemMeta = item.getItemMeta();
-            itemMeta.setDisplayName(name);
-            item.setItemMeta(itemMeta);
-            return item;
         }
 
         public static void tokenRecipe() {
@@ -124,8 +109,82 @@ public class Utilities implements Listener {
             }, 1L);
          }
 
+        public ItemStack backArrow(){
 
-        private void revivePlayer(Player p, Location loc, World world) {
+            ItemStack BackArrow = SkullCreator.itemFromBase64(back_arrow_head);
+            ItemMeta BackArrowMeta = BackArrow.getItemMeta();
+            BackArrowMeta.setDisplayName("§3§lGo Back!");
+            BackArrow.setItemMeta(BackArrowMeta);
+
+            return BackArrow;
+        }
+
+        public ItemStack worldSpawnHead(UUID uuid){
+
+            ItemStack WorldSpawnHead = SkullCreator.itemFromBase64(world_spawn_head);
+            ItemMeta WorldSpawnHeadMeta = WorldSpawnHead.getItemMeta();
+            WorldSpawnHeadMeta.setDisplayName("§3§lWorld Spawn");
+            ArrayList WorldSpawnHeadLore = new ArrayList();
+            WorldSpawnHeadLore.add("§3Click to respawn " + Bukkit.getPlayer(uuid).getName());
+            WorldSpawnHeadLore.add("§3at world's spawnpoint!");
+            WorldSpawnHeadMeta.setLore(WorldSpawnHeadLore);
+            WorldSpawnHead.setItemMeta(WorldSpawnHeadMeta);
+
+            return WorldSpawnHead;
+        }
+
+        public ItemStack eyeLocationHead(UUID uuid){
+
+            ItemStack EyeLocationHead = SkullCreator.itemFromBase64(eye_location_head);
+            ItemMeta EyeLocationHeadMeta = EyeLocationHead.getItemMeta();
+            EyeLocationHeadMeta.setDisplayName("§3§lSimple Revive");
+            ArrayList EyeLocationHeadLore = new ArrayList();
+            EyeLocationHeadLore.add("§3Click to respawn " + Bukkit.getPlayer(uuid).getName());
+            EyeLocationHeadLore.add("§3where you are looking!");
+            EyeLocationHeadMeta.setLore(EyeLocationHeadLore);
+            EyeLocationHead.setItemMeta(EyeLocationHeadMeta);
+
+            return EyeLocationHead;
+        }
+
+        public ItemStack bed(UUID uuid) {
+        ItemStack Bed;
+            if (Bukkit.getPlayer(uuid).getBedSpawnLocation() != null) {
+                Bed = new ItemStack(Material.GREEN_BED, 1);
+                ItemMeta BedMeta = Bed.getItemMeta();
+                BedMeta.setDisplayName("§3§lBed Spawn");
+                ArrayList BedLore = new ArrayList();
+                BedLore.add("§3Click to respawn " + Bukkit.getPlayer(uuid).getName());
+                BedLore.add("§3at his bed!");
+                BedMeta.setLore(BedLore);
+                Bed.setItemMeta(BedMeta);
+            } else {
+                Bed = new ItemStack(Material.RED_BED, 1);
+                ItemMeta BedMeta = Bed.getItemMeta();
+                BedMeta.setDisplayName("§3§lBed Spawn");
+                ArrayList BedLore = new ArrayList();
+                BedLore.add("§3" + Bukkit.getPlayer(uuid).getName());
+                BedLore.add("§3has no bed!");
+                BedMeta.setLore(BedLore);
+                Bed.setItemMeta(BedMeta);
+
+            }
+            return Bed;
+        }
+
+    public static String getString(String s, File f) {
+        Properties pr = new Properties();
+        try {
+            FileInputStream in = new FileInputStream(f);
+            pr.load(in);
+            String string = pr.getProperty(s);
+            return string;
+        } catch (IOException e) {
+
+        }
+        return "";
+    }
+    public void revivePlayer(Player p, Location loc, World world) {
             world.strikeLightningEffect(loc);
             p.teleport(loc);
             p.setGameMode(GameMode.SURVIVAL);
@@ -138,4 +197,7 @@ public class Utilities implements Listener {
             p.getWorld().playSound(p.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0F, 1.0F);
             p.getWorld().playSound(p.getLocation(), Sound.BLOCK_END_PORTAL_SPAWN, 1.0F, 1.0F);
         }
+    private final static String back_arrow_head = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvODFjOTZhNWMzZDEzYzMxOTkxODNlMWJjN2YwODZmNTRjYTJhNjUyNzEyNjMwM2FjOGUyNWQ2M2UxNmI2NGNjZiJ9fX0=";
+    private final static String world_spawn_head = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTI4OWQ1YjE3ODYyNmVhMjNkMGIwYzNkMmRmNWMwODVlODM3NTA1NmJmNjg1YjVlZDViYjQ3N2ZlODQ3MmQ5NCJ9fX0=";
+    private final static String eye_location_head = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDQyY2Y4Y2U0ODdiNzhmYTIwM2Q1NmNmMDE0OTE0MzRiNGMzM2U1ZDIzNjgwMmM2ZDY5MTQ2YTUxNDM1YjAzZCJ9fX0=";
     }

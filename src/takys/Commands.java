@@ -10,74 +10,82 @@ import org.bukkit.inventory.ItemStack;
 import takys.Util.Inventories;
 import takys.Util.Utilities;
 
+import java.util.Locale;
+
 
 public class Commands implements CommandExecutor {
 
 
-      public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+      private final Setup setup = Setup.instance;
+      private Utilities util = setup.getUtil();
 
-            //Nothing Here
+
+      @Override
+      public boolean onCommand(final CommandSender cs, final Command cmd, final String lb, final String[] args) {
+
             if (args.length == 0) {
-                  sender.sendMessage("Commands:");
-                  sender.sendMessage("/hr token <player> <amount> | /hr cleardeaths <player>");
+                  cs.sendMessage("Commands:");
+                  cs.sendMessage("/hr token <player> <amount> | /hr cleardeaths <player> | /hr cleardatabase");
                   return true;
             }
 
-            //Token Command - 100% Complete!
+            switch (args[0].toLowerCase()){
+                  case "token":
+                        if (cs.hasPermission("hr.token")){
+                              if (args.length == 1 && args[0].equalsIgnoreCase("token")) {
+                                    if (cs instanceof Player) {
+                                          return this.addToken((Player) cs, 1);
+                                    } else {
+                                          cs.sendMessage("Hi, Console!");
+                                          return false;
+                                    }
+                              } else if (args.length == 2 && args[0].equalsIgnoreCase("token")) {
+                                    if (util.isNumeric(String.valueOf(args[1]))) {
+                                          if (cs instanceof Player) {
+                                                return this.addToken((Player) cs, Integer.valueOf(args[1]));
+                                          } else {
+                                                cs.sendMessage("Hi, Console!");
+                                                return false;
+                                          }
+                                    } else if (!util.isNumeric(String.valueOf(args[1]))) {
+                                          if (Bukkit.getPlayer(args[1]) != null) {
+                                                return this.addToken(Bukkit.getPlayer(args[1]), 1);
+                                          } else {
+                                                cs.sendMessage("Player not found!");
+                                                return false;
+                                          }
+                                    } else if (cs == cs) {
+                                          return this.addToken((Player) cs, 1);
+                                    }
+                              } else if (args.length == 3 && args[0].equalsIgnoreCase("token")) {
+                                    if (!util.isNumeric(args[1]) && util.isNumeric(args[2]) && Bukkit.getPlayer(args[1]) != null) {
+                                          return this.addToken(Bukkit.getPlayer(args[1]), Integer.valueOf(args[2]));
+                                    } else {
+                                          cs.sendMessage("Incorrect argument input!");
+                                          return false;
+                                    }
+                              }
+                        }return Utilities.noPermission(cs);
+                  case "cleardeaths":
+                        if (cs.hasPermission("hr.cd")){
+                              if (args.length == 2) {
+                                    Player p = Bukkit.getPlayer(args[1]);
+                                    if (p != null) {return this.resetDeaths(cs, Bukkit.getPlayer(args[1]));}
+                                    cs.sendMessage("Player could not be found.");return true;}
+                              if (cs instanceof Player) {return this.resetDeaths(cs, (Player) cs);}
+                        }return Utilities.noPermission(cs);
+                  case "cleardatabase":
+                        if (cs.hasPermission("hr.cdb")){
+                              cs.sendMessage("Successfully deleted database!");
+                              FileHandler.deleteFallen();
+                              return true;
+                        }return Utilities.noPermission(cs);
+                  default:
+                        cs.sendMessage("Invalid command!");
 
-            if (args.length == 1 && args[0].equalsIgnoreCase("token")){
-                  if (sender instanceof Player){
-                        return this.addToken((Player)sender,1);
-                  }else{sender.sendMessage("Hi, Console!"); return false;}
-            }else if (args.length == 2 && args[0].equalsIgnoreCase("token")) {
-                  if (Utilities.isNumeric(String.valueOf(args[1]))) {
-                        if(sender instanceof Player) {
-                              return this.addToken((Player) sender, Integer.valueOf(args[1]));
-                        }else{sender.sendMessage("Hi, Console!"); return false;}
-                  } else if (!Utilities.isNumeric(String.valueOf(args[1]))) {
-                        if(Bukkit.getPlayer(args[1]) != null){
-                              return this.addToken(Bukkit.getPlayer(args[1]), 1);
-                        }else{sender.sendMessage("Player not found!"); return false;}
-                  } else if (sender == sender){
-                        return this.addToken((Player)sender,1);
-                  }
-            }else if (args.length == 3 && args[0].equalsIgnoreCase("token")){
-                  if (!Utilities.isNumeric(args[1]) && Utilities.isNumeric(args[2]) && Bukkit.getPlayer(args[1]) != null){
-                        return this.addToken(Bukkit.getPlayer(args[1]),Integer.valueOf(args[2]));
-                  }else{sender.sendMessage("Incorrect argument input!"); return false;}
             }
-
-
-
-
-           //ClearDeaths 100% Complete maybe add detail to messages
-                  if (args.length <= 2 && args[0].equalsIgnoreCase("cleardeaths")) {
-                      if (!sender.hasPermission("hr.deathToken")) {
-                            return Utilities.noPermission(sender);
-                      }
-
-                      if (args.length == 2) {
-                            Player p = Bukkit.getPlayer(args[1]);
-                            if (p != null) {
-                            	return this.resetDeaths(sender,Bukkit.getPlayer(args[1]));
-                            }
-
-                            sender.sendMessage("Player could not be found.");
-                            return true;
-                      }
-
-                      if (sender instanceof Player) {
-                    	  return this.resetDeaths(sender,(Player)sender);
-                      }
-                }
-
-                  sender.sendMessage("That command is not recognized.");
-                  return true;
-            }
-
-
-      
-     
+            return true;
+      }
       private boolean resetDeaths(CommandSender sender,Player p) {
     	  p.setStatistic(Statistic.DEATHS, 0);
     	  sender.sendMessage("Player's death count is now 0. ");
@@ -86,12 +94,12 @@ public class Commands implements CommandExecutor {
       
       private boolean addToken(Player p, int amount) {
             if (amount == 1) {
-                  Utilities.token.setAmount(1);
+                  util.token.setAmount(1);
                   p.getInventory().addItem(new ItemStack[]{Utilities.token});
                   p.sendMessage("You have received a Revival Token!");
                   return true;
             }else{
-                  Utilities.token.setAmount(amount);
+                  util.token.setAmount(amount);
                   p.getInventory().addItem(new ItemStack[]{Utilities.token});
                   p.sendMessage("You have received " + amount + " Revival Tokens!");
                   return true;

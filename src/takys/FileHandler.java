@@ -1,13 +1,9 @@
 package takys;
 
+import org.apache.commons.io.FileUtils;
 import takys.Util.Utilities;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.util.List;
@@ -49,7 +45,18 @@ public class FileHandler {
             }
 
       }
-
+      public static void deleteFallen()
+      {
+            try{
+                  FileWriter fw = new FileWriter(filePath, false);
+                  PrintWriter pw = new PrintWriter(fw, false);
+                  pw.flush();
+                  pw.close();
+                  fw.close();
+            }catch(Exception exception){
+                  System.out.println("Exception have been caught");
+            }
+      }
       static {
             filePath = Setup.dataFolder + "/Dead Players.data";
       }

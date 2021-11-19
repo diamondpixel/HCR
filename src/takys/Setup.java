@@ -14,17 +14,42 @@ import takys.Util.Utilities;
 
 public class Setup extends JavaPlugin {
 
-      public static Plugin plugin;
       public static File dataFolder;
 
       public static FileConfiguration config;
 
+      public static Setup instance;
 
+      private Inventories inventories;
+
+      public Inventories getInventories()
+      {
+            return inventories;
+      }
+
+      private Utilities util;
+
+      public Utilities getUtil()
+      {
+            return util;
+      }
+
+      private Events events;
+
+      public Events getEvents()
+      {
+            return events;
+      }
       public void onEnable() {
 
 
-            plugin = this;
-            Utilities utilities = new Utilities();
+            instance = this;
+            inventories = new Inventories();
+            util = new Utilities();
+
+            this.getServer().getPluginManager().registerEvents(new Events(), this);
+            this.getServer().getPluginManager().registerEvents(new Inventories(), this);
+
             dataFolder = this.getDataFolder();
             config = this.getConfig();
             File configFile = new File(this.getDataFolder(), "config.yml");
@@ -33,16 +58,13 @@ public class Setup extends JavaPlugin {
             }
 
             this.saveConfig();
-            this.getServer().getPluginManager().registerEvents(new Events(), this);
-            this.getServer().getPluginManager().registerEvents(new Inventories(), this);
-            this.getServer().getPluginManager().registerEvents(new Utilities(), this);
             this.getCommand("hr").setExecutor(new Commands());
             FileHandler.LoadFallen();
             Utilities.tokenRecipe();
       }
       public void onDisable(){
 
-             plugin = null;
+             instance = null;
              this.saveConfig();
              FileHandler.SaveFallen();
 
@@ -50,7 +72,7 @@ public class Setup extends JavaPlugin {
 
 
       public static Plugin getPlugin() {
-            return plugin;
+            return instance;
       }
       
       private void ConfigCreate() {
