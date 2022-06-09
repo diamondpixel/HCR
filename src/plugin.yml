@@ -2,7 +2,4 @@ name: HardcoreRespawn
 main: takys.Setup
 version: 1.27
 api-version: 1.13
-commands:
-   hr:
-      description: The base command for the plugin
-      usage: /hr
+

@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="HardCoreRespawn" target="8" />
+      <module name="HardCoreRespawn" target="17" />
     </bytecodeTargetLevel>
   </component>
 </project>
