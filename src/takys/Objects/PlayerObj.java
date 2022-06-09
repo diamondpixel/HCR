@@ -7,10 +7,6 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
-/**
-import org.bukkit.inventory.Inventory;
-import java.io.IOException;
- */
 
 public class PlayerObj implements Serializable {
 
@@ -20,7 +16,6 @@ public class PlayerObj implements Serializable {
     private String _uuid;
     private long _date;
     private String loc;
-    /**private String inv;*/
 
     public PlayerObj(UUID uuid, Date date, DamageCause Dc, String loc) {
         this._uuid = uuid.toString();
@@ -45,17 +40,5 @@ public class PlayerObj implements Serializable {
     public Player GetPlayer() {
         return Bukkit.getServer().getPlayer(this.GetUUID());
     }
-  /**
-    public PlayerObj(UUID uuid, Date date, DamageCause Dc, String loc, Inventory inventory) {
-        this.inv = Serializers.toBase64(inventory);
-        this._uuid = uuid.toString();
-        this._date = date.getTime();
-        this.DC = Dc.toString();
-        this.loc = loc;
 
-    }     //FUTURE USE!!!
-
-    public Inventory GetInventory() throws IOException {
-        return Serializers.fromBase64(this.inv);
-    }*/
 }

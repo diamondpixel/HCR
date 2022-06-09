@@ -45,7 +45,7 @@ public class GraphicalUserInterface {
         });
 
         SGButton Bed = new SGButton(Utilities.BedItem(pObj.GetUUID())).withListener((InventoryClickEvent event) -> {
-            Utilities.RevivePlayer(Viewer,pObj,player.getBedSpawnLocation());
+           if (player.getBedSpawnLocation() != null) Utilities.RevivePlayer(Viewer,pObj,player.getBedSpawnLocation());
         });
 
         SGButton WorldSpawn = new SGButton(Utilities.WorldSpawnItem(pObj.GetUUID())).withListener((InventoryClickEvent event) -> {
