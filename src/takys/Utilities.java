@@ -44,9 +44,8 @@ public class Utilities {
         try {
             FileInputStream in = new FileInputStream(f);
             pr.load(in);
-            String string = pr.getProperty(s);
-            return string;
-        } catch (IOException e) {
+            return pr.getProperty(s);
+        } catch (IOException ignored) {
         }
         return "";
     }
@@ -79,24 +78,24 @@ public class Utilities {
         Token.addUnsafeEnchantment(Enchantment.LOYALTY, 10);
         ItemMeta meta = Token.getItemMeta();
         ArrayList lore = new ArrayList();
-        lore.add("Choose a fallen ally to ressurect.");
-        lore.add("They will appear at your location");
+        lore.add("Choose a dead player to revive.");
         meta.setLore(lore);
         meta.setDisplayName("Revival Token");
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         Token.setItemMeta(meta);
         NamespacedKey Key = new NamespacedKey(Setup.instance, "Token");
         ShapedRecipe TokenRecipe = new ShapedRecipe(Key, Token);
+        List<String> Materials = Setup.instance.getConfig().getStringList("recipe");
         TokenRecipe.shape("123", "456", "789");
-        TokenRecipe.setIngredient('1', Material.END_CRYSTAL);
-        TokenRecipe.setIngredient('2', Material.END_CRYSTAL);
-        TokenRecipe.setIngredient('3', Material.END_CRYSTAL);
-        TokenRecipe.setIngredient('4', Material.END_CRYSTAL);
-        TokenRecipe.setIngredient('5', Material.END_CRYSTAL);
-        TokenRecipe.setIngredient('6', Material.END_CRYSTAL);
-        TokenRecipe.setIngredient('7', Material.END_CRYSTAL);
-        TokenRecipe.setIngredient('8', Material.END_CRYSTAL);
-        TokenRecipe.setIngredient('9', Material.END_CRYSTAL);
+        TokenRecipe.setIngredient('1', Material.valueOf(Materials.get(0)));
+        TokenRecipe.setIngredient('2', Material.valueOf(Materials.get(1)));
+        TokenRecipe.setIngredient('3', Material.valueOf(Materials.get(2)));
+        TokenRecipe.setIngredient('4', Material.valueOf(Materials.get(3)));
+        TokenRecipe.setIngredient('5', Material.valueOf(Materials.get(4)));
+        TokenRecipe.setIngredient('6', Material.valueOf(Materials.get(5)));
+        TokenRecipe.setIngredient('7', Material.valueOf(Materials.get(6)));
+        TokenRecipe.setIngredient('8', Material.valueOf(Materials.get(7)));
+        TokenRecipe.setIngredient('9', Material.valueOf(Materials.get(8)));
         return new Pair<>(TokenRecipe, Token);
     }
 

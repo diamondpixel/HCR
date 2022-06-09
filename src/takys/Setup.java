@@ -19,13 +19,20 @@ public class Setup extends JavaPlugin {
     public static SpiGUI spiGUI;
 
     public void onEnable() {
+        //Important
         instance = this;
+        this.saveDefaultConfig();
+
         spiGUI = new SpiGUI(this);
         Item = Utilities.ConstructRecipe().getValue();
         Recipe = Utilities.ConstructRecipe().getKey();
         DeadPlayers = DataManager.LoadObjectsFromFile();
+
         Bukkit.addRecipe(Recipe);
         Bukkit.getPluginManager().registerEvents(new Listeners(),this);
         Bukkit.getOnlinePlayers().forEach((player -> { player.discoverRecipe(Recipe.getKey());}));
+    }
+    public void onDisable(){
+        this.saveDefaultConfig();
     }
 }

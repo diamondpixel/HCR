@@ -11,6 +11,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
 import takys.Files.DataManager;
 import takys.Objects.PlayerObj;
 import takys.Objects.Serializers;
@@ -44,7 +45,6 @@ public class Listeners implements Listener {
 
     @EventHandler
     public void OnPlayerInteract(PlayerInteractEvent event) {
-
         if (event.getItem() == null)
             return;
 
@@ -57,11 +57,10 @@ public class Listeners implements Listener {
         if (event.getItem().getType() != Material.END_CRYSTAL)
             return;
 
-        if (event.getItem().getEnchantmentLevel(Enchantment.LOYALTY) != 10)
+        if (!Objects.equals(event.getItem().getItemMeta(), Setup.Item.getItemMeta()))
             return;
 
         event.setCancelled(true);
         event.getPlayer().openInventory(GraphicalUserInterface.DeadPlayersGui().getInventory());
-
     }
 }
