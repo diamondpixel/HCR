@@ -1,28 +1,33 @@
 package takys;
 
-import dev.dbassett.skullcreator.SkullCreator;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import takys.Files.DataManager;
 import takys.Objects.Pair;
 import takys.Objects.PlayerObj;
+import takys.SkullCreator.SkullCreator;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-import static takys.Objects.Serializers.SerializedToFormattedString;
 
 public class Utilities {
 
+    public final static Setup setup = Setup.instance;
+    public final static DataManager dataManager = Setup.dataManager;
     public final static String death_location_head = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjllMmYzM2ViMTgwZjA0MzQ5MTZkYzVkMmJiMzI2YTZlYTIyZmM5YmJmOTg4YmMzMWEyNDFmZDQyNzgwMjMifX19";
     public final static String back_arrow_head = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvODFjOTZhNWMzZDEzYzMxOTkxODNlMWJjN2YwODZmNTRjYTJhNjUyNzEyNjMwM2FjOGUyNWQ2M2UxNmI2NGNjZiJ9fX0=";
     public final static String world_spawn_head = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTI4OWQ1YjE3ODYyNmVhMjNkMGIwYzNkMmRmNWMwODVlODM3NTA1NmJmNjg1YjVlZDViYjQ3N2ZlODQ3MmQ5NCJ9fX0=";
@@ -45,11 +50,11 @@ public class Utilities {
             FileInputStream in = new FileInputStream(f);
             pr.load(in);
             return pr.getProperty(s);
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) {}
         return "";
     }
 
+    @SuppressWarnings("all")
     public static ItemStack GetPlayerSkull(PlayerObj pObj) {
         Player player = Bukkit.getPlayer(pObj.GetUUID());
         ItemStack item = new ItemStack(Material.PLAYER_HEAD);
@@ -57,22 +62,27 @@ public class Utilities {
         meta.setDisplayName(player.getName());
         meta.setOwningPlayer(player);
         ArrayList lore = new ArrayList();
-        long secs = ((new Date()).getTime() - pObj.GetDate().getTime()) / 1000L;
-        int days = (int) secs / 86400;
-        secs -= days * 86400;
-        int hours = (int) secs / 3600;
-        secs -= hours * 3600;
-        int mins = (int) secs / 60;
-        lore.add("Died " + days + "d, " + hours + "h, " + mins + "m ago");
-        lore.add("Cause of Death: " + pObj.DC);
+        String serializedLocation = GetSerializedLocation(pObj.GetLoc());
+        Duration duration = calculateDifference(pObj.GetDate(), LocalDateTime.now());
+        long days = duration.toDays();
+        duration = duration.minusDays(days);
+        long hours = duration.toHours();
+        duration = duration.minusHours(hours);
+        long minutes = duration.toMinutes();
+        duration = duration.minusMinutes(minutes);
+        long seconds = duration.getSeconds();
+        lore.add("Died " + days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s" + " ago");
+        lore.add("Cause of Death: " + GetSerializedDamageCause(pObj.GetDamageCause()));
         lore.add("Death Count: " + player.getStatistic(Statistic.DEATHS));
         lore.add("Coordinates of latest death:");
-        lore.add((SerializedToFormattedString(pObj.GetLoc())));
+        lore.add(SerializedToFormattedString(serializedLocation));
+        new BukkitRunnable() {@Override public void run() { }}.runTaskAsynchronously(setup);
         meta.setLore(lore);
         item.setItemMeta(meta);
         return item;
     }
 
+    @SuppressWarnings("all")
     public static Pair<ShapedRecipe, ItemStack> ConstructRecipe() {
         ItemStack Token = new ItemStack(Material.END_CRYSTAL, 1);
         Token.addUnsafeEnchantment(Enchantment.LOYALTY, 10);
@@ -83,7 +93,7 @@ public class Utilities {
         meta.setDisplayName("Revival Token");
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         Token.setItemMeta(meta);
-        NamespacedKey Key = new NamespacedKey(Setup.instance, "Token");
+        NamespacedKey Key = new NamespacedKey(setup, "Token");
         ShapedRecipe TokenRecipe = new ShapedRecipe(Key, Token);
         List<String> Materials = Setup.instance.getConfig().getStringList("recipe");
         TokenRecipe.shape("123", "456", "789");
@@ -99,6 +109,7 @@ public class Utilities {
         return new Pair<>(TokenRecipe, Token);
     }
 
+    @SuppressWarnings("all")
     public static ItemStack BackArrowItem() {
 
         ItemStack BackArrow = SkullCreator.itemFromBase64(back_arrow_head);
@@ -109,20 +120,23 @@ public class Utilities {
         return BackArrow;
     }
 
+    @SuppressWarnings("all")
     public static ItemStack DeathLocationItem(PlayerObj pObj) {
 
         ItemStack DeathLocation = SkullCreator.itemFromBase64(death_location_head);
         ItemMeta DeathLocationMeta = DeathLocation.getItemMeta();
         DeathLocationMeta.setDisplayName("§0§lDeath Location");
         ArrayList DeathLocationLore = new ArrayList();
+        String serializedLocation = GetSerializedLocation(pObj.GetLoc());
         DeathLocationLore.add("§3Click to respawn " + Bukkit.getPlayer(pObj.GetUUID()).getName());
-        DeathLocationLore.add("§3where he died! (" + (SerializedToFormattedString(pObj.GetLoc())) + ")");
+        DeathLocationLore.add("§3where he died! (" + SerializedToFormattedString(serializedLocation) + ")");
         DeathLocationMeta.setLore(DeathLocationLore);
         DeathLocation.setItemMeta(DeathLocationMeta);
 
         return DeathLocation;
     }
 
+    @SuppressWarnings("all")
     public static ItemStack WorldSpawnItem(UUID uuid) {
 
         ItemStack WorldSpawnHead = SkullCreator.itemFromBase64(world_spawn_head);
@@ -137,6 +151,7 @@ public class Utilities {
         return WorldSpawnHead;
     }
 
+    @SuppressWarnings("all")
     public static ItemStack EyeLocationItem(UUID uuid) {
 
         ItemStack EyeLocationHead = SkullCreator.itemFromBase64(eye_location_head);
@@ -151,6 +166,7 @@ public class Utilities {
         return EyeLocationHead;
     }
 
+    @SuppressWarnings("all")
     public static ItemStack BedItem(UUID uuid) {
 
         Player player = Bukkit.getPlayer(uuid);
@@ -183,16 +199,14 @@ public class Utilities {
         return Bed;
     }
 
+    @SuppressWarnings("all")
     public static void RevivePlayer(Player Viewer, PlayerObj pObj, Location loc) {
         Player p = Bukkit.getPlayer(pObj.GetUUID());
         if (p.isOnline()) {
             Viewer.closeInventory();
-            RemoveFirstItem(Viewer, Setup.Item);
-            Setup.DeadPlayers.remove(pObj);
-            DataManager.EraseFileContents();
-            Setup.DeadPlayers.forEach((player) -> {
-                DataManager.WriteObjectToFile(player);
-            });
+            RemoveFirstItem(Viewer, setup.Item);
+            setup.DeadPlayers.remove(pObj);
+            dataManager.deleteJsonFile(pObj.GetUUID() + ".json");
             p.teleport(loc);
             p.setGameMode(GameMode.SURVIVAL);
             loc.getWorld().strikeLightningEffect(loc);
@@ -205,4 +219,51 @@ public class Utilities {
             p.getWorld().playSound(p.getLocation(), Sound.BLOCK_END_PORTAL_SPAWN, 1.0F, 1.0F);
         }
     }
+
+    public static String GetSerializedLocation(Location loc) {
+        return loc.getX() + ";" + loc.getY() + ";" + loc.getZ() + ";" + loc.getWorld().getUID();
+    }
+
+    public static Location GetDeserializedLocation(String s) {
+        String[] parts = s.split(";");
+        double x = Double.parseDouble(parts[0]);
+        double y = Double.parseDouble(parts[1]);
+        double z = Double.parseDouble(parts[2]);
+        UUID u = UUID.fromString(parts[3]);
+        World w = Bukkit.getServer().getWorld(u);
+        return new Location(w, x, y, z);
+    }
+
+    public static String SerializedToFormattedString(String string) {
+        String[] parts = string.split(";");
+        String x = String.valueOf((int) Double.parseDouble(parts[0]));
+        String y = String.valueOf((int) Double.parseDouble(parts[1]));
+        String z = String.valueOf((int) Double.parseDouble(parts[2]));
+        String w = Bukkit.getServer().getWorld(UUID.fromString(parts[3])).getName();
+        return "%w , %x , %y , %z".replace("%w", w).replace("%x", x).replace("%y", y).replace("%z", z);
+    }
+
+    public static String GetSerializedLocalDateTime(LocalDateTime localDateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy-HH.mm.ss");
+        return localDateTime.format(formatter);
+    }
+
+    public static LocalDateTime GetDeserializedLocalDateTime(String localDateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy-HH.mm.ss");
+        return LocalDateTime.parse(localDateTime, formatter);
+    }
+
+    public static String GetSerializedDamageCause(EntityDamageEvent.DamageCause damageCause) {
+        return damageCause.toString();
+    }
+
+    public static EntityDamageEvent.DamageCause GetDeserializedDamageCause(String damageCause) {
+        return EntityDamageEvent.DamageCause.valueOf(damageCause);
+    }
+
+    public static Duration calculateDifference(LocalDateTime dateTime1, LocalDateTime dateTime2) {
+        return Duration.between(dateTime1, dateTime2);
+    }
+
+
 }

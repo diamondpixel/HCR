@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="HCRR:jar">
+    <output-path>D:/TestPaperServer/plugins</output-path>
+    <root id="archive" name="HCRR.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="HCRR" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/samjakob/SpiGUI/1.3.1/SpiGUI-1.3.1.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

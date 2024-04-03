@@ -1,41 +1,41 @@
 package takys;
 
-import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.Inventory;
 import takys.Files.DataManager;
 import takys.Objects.PlayerObj;
-import takys.Objects.Serializers;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Listeners implements Listener {
 
+    public final static Setup setup = Setup.instance;
+    public final static DataManager dataManager = Setup.dataManager;
+    public final static GraphicalUserInterface gui = Setup.gui;
     @EventHandler
+    @SuppressWarnings("all")
     public void OnDeath(PlayerDeathEvent event) {
 
-        Date date = new Date();
-        Player player = event.getPlayer();
-        String loc = Serializers.GetSerializedLocation(player.getLocation());
-        EntityDamageEvent.DamageCause dc = player.getLastDamageCause().getCause();
-        PlayerObj pObj = new PlayerObj(player.getUniqueId(), date, dc, loc);
 
-        for (PlayerObj obj : Setup.DeadPlayers) {
-            if (Objects.equals(obj.GetUUID(), pObj.GetUUID()))
-                return;
-        }
-        DataManager.WriteObjectToFile(pObj);
-        Setup.DeadPlayers.add(pObj);
+        Player player = event.getEntity();
+        Location loc = player.getLocation();
+        LocalDateTime localDateTime = LocalDateTime.now();
+        EntityDamageEvent.DamageCause dc = player.getLastDamageCause().getCause();
+        PlayerObj pObj = new PlayerObj(player.getUniqueId(), localDateTime, dc, loc);
+
+        dataManager.createJsonFile(player.getUniqueId(), loc, localDateTime, dc);
+        setup.DeadPlayers.add(pObj);
+
     }
 
     @EventHandler
@@ -48,7 +48,7 @@ public class Listeners implements Listener {
         if (event.getItem() == null)
             return;
 
-        if (event.getAction().isLeftClick())
+        if (event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.LEFT_CLICK_BLOCK)
             return;
 
         if (event.getHand() == EquipmentSlot.OFF_HAND)
@@ -61,6 +61,6 @@ public class Listeners implements Listener {
             return;
 
         event.setCancelled(true);
-        event.getPlayer().openInventory(GraphicalUserInterface.DeadPlayersGui().getInventory());
+        event.getPlayer().openInventory(gui.deadPlayersGui(event.getPlayer()).getInventory());
     }
 }

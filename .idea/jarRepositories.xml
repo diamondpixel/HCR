@@ -2,14 +2,14 @@
 <project version="4">
   <component name="RemoteRepositoriesConfiguration">
     <remote-repository>
+      <option name="id" value="minecraft-libraries" />
+      <option name="name" value="Minecraft Libraries" />
+      <option name="url" value="https://libraries.minecraft.net" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="central" />
       <option name="name" value="Central Repository" />
       <option name="url" value="https://repo.maven.apache.org/maven2" />
-    </remote-repository>
-    <remote-repository>
-      <option name="id" value="papermc" />
-      <option name="name" value="papermc" />
-      <option name="url" value="https://papermc.io/repo/repository/maven-public/" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="jitpack.io" />
@@ -17,8 +17,8 @@
       <option name="url" value="https://jitpack.io" />
     </remote-repository>
     <remote-repository>
-      <option name="id" value="8578e91b-db34-487c-9e79-7069d1ce02c3" />
-      <option name="name" value="8578e91b-db34-487c-9e79-7069d1ce02c3" />
+      <option name="id" value="papermc" />
+      <option name="name" value="papermc" />
       <option name="url" value="https://papermc.io/repo/repository/maven-public/" />
     </remote-repository>
     <remote-repository>
@@ -27,9 +27,19 @@
       <option name="url" value="https://hub.spigotmc.org/nexus/content/repositories/snapshots/" />
     </remote-repository>
     <remote-repository>
+      <option name="id" value="8578e91b-db34-487c-9e79-7069d1ce02c3" />
+      <option name="name" value="8578e91b-db34-487c-9e79-7069d1ce02c3" />
+      <option name="url" value="https://papermc.io/repo/repository/maven-public/" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="skullcreator-repo" />
       <option name="name" value="skullcreator-repo" />
       <option name="url" value="https://github.com/deanveloper/SkullCreator/raw/mvn-repo/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="papermc-repo" />
+      <option name="name" value="papermc-repo" />
+      <option name="url" value="https://papermc.io/repo/repository/maven-public/" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="central" />

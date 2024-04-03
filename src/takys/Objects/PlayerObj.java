@@ -1,44 +1,45 @@
 package takys.Objects;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 
-public class PlayerObj implements Serializable {
+public class PlayerObj{ ;
 
-    private static final long serialVersionUID = 1L;
+    final DamageCause damageCause;
+    final UUID uuid;
+    final LocalDateTime deathDate;
+    final Location deathLocation;
 
-    public String DC;
-    private String _uuid;
-    private long _date;
-    private String loc;
-
-    public PlayerObj(UUID uuid, Date date, DamageCause Dc, String loc) {
-        this._uuid = uuid.toString();
-        this._date = date.getTime();
-        this.DC = Dc.toString();
-        this.loc = loc;
+    public PlayerObj(UUID uuid, LocalDateTime deathDate, DamageCause damageCause, Location loc) {
+        this.uuid = uuid;
+        this.deathDate = deathDate;
+        this.damageCause = damageCause;
+        this.deathLocation = loc;
     }
 
     public UUID GetUUID() {
-        return UUID.fromString(this._uuid);
+        return this.uuid;
     }
 
-    public Date GetDate() {
-        Date tempDate = new Date(this._date);
-        return tempDate;
+    public LocalDateTime GetDate() {
+        return this.deathDate;
     }
 
-    public String GetLoc() {
-        return loc;
+    public Location GetLoc() {
+        return this.deathLocation;
     }
 
     public Player GetPlayer() {
         return Bukkit.getServer().getPlayer(this.GetUUID());
+    }
+
+    public DamageCause GetDamageCause() {
+        return this.damageCause;
     }
 
 }
