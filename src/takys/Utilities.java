@@ -123,13 +123,20 @@ public class Utilities {
     @SuppressWarnings("all")
     public static ItemStack DeathLocationItem(PlayerObj pObj) {
 
-        ItemStack DeathLocation = SkullCreator.itemFromBase64(death_location_head);
+        ItemStack DeathLocation = isBelowAir(pObj) ? new ItemStack(Material.BARRIER) : SkullCreator.itemFromBase64(death_location_head);
         ItemMeta DeathLocationMeta = DeathLocation.getItemMeta();
         DeathLocationMeta.setDisplayName("§0§lDeath Location");
         ArrayList DeathLocationLore = new ArrayList();
         String serializedLocation = GetSerializedLocation(pObj.GetLoc());
-        DeathLocationLore.add("§3Click to respawn " + Bukkit.getPlayer(pObj.GetUUID()).getName());
-        DeathLocationLore.add("§3where he died! (" + SerializedToFormattedString(serializedLocation) + ")");
+
+        if (isBelowAir(pObj)) {
+            DeathLocationLore.add("§3Cannot respawn at coords because floor is air. Probably void.");
+            DeathLocationLore.add("§3Death coordinates (" + SerializedToFormattedString(serializedLocation) + ")");
+        } else {
+            DeathLocationLore.add("§3Click to respawn " + Bukkit.getPlayer(pObj.GetUUID()).getName());
+            DeathLocationLore.add("§3where he died! (" + SerializedToFormattedString(serializedLocation) + ")");
+        }
+
         DeathLocationMeta.setLore(DeathLocationLore);
         DeathLocation.setItemMeta(DeathLocationMeta);
 
@@ -206,7 +213,7 @@ public class Utilities {
             Viewer.closeInventory();
             RemoveFirstItem(Viewer, setup.Item);
             setup.DeadPlayers.remove(pObj);
-            dataManager.deleteJsonFile(pObj.GetUUID() + ".json");
+            dataManager.deleteJsonFile(setup.getDataFolder() + "\\DeadPlayers\\" + pObj.GetUUID() + ".json");
             p.teleport(loc);
             p.setGameMode(GameMode.SURVIVAL);
             loc.getWorld().strikeLightningEffect(loc);
@@ -265,5 +272,14 @@ public class Utilities {
         return Duration.between(dateTime1, dateTime2);
     }
 
+    public static void removeUUIDfromDeadPlayers(UUID uuid) {
+        Setup.DeadPlayers.removeIf(playerObj -> Objects.equals(playerObj.GetUUID(), uuid));
+    }
 
+    public static boolean isBelowAir(PlayerObj playerObj) {
+        World deathWorld = playerObj.GetLoc().getWorld();
+        double blockYBelowPlayersDeath = playerObj.GetLoc().getBlockY() - 1;
+        Location loc = new Location(deathWorld, playerObj.GetLoc().getX(), blockYBelowPlayersDeath, playerObj.GetLoc().getZ());
+        return loc.getBlock().getType() == Material.AIR;
+    }
 }

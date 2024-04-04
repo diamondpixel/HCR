@@ -6,53 +6,43 @@ import com.samjakob.spigui.menu.SGMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import takys.Objects.PlayerObj;
 
 import java.io.File;
+import java.util.Objects;
 
 public class GraphicalUserInterface {
-
-
-    private final SGButton head = new SGButton(new ItemStack(Material.AIR))
-            .withListener((InventoryClickEvent event) -> {
-                if (event.getCurrentItem() == null) {
-                    return;
-                }
-                String playerName = event.getCurrentItem().getItemMeta().getDisplayName();
-                for (PlayerObj deadPlayer : Setup.DeadPlayers) {
-                    if (deadPlayer.GetPlayer().getName().equals(playerName)) {
-                        event.getWhoClicked().openInventory(specificDeadPlayersGui((Player) event.getWhoClicked(), deadPlayer).getInventory());
-                        return;
-                    }
-                }
-            });
 
     @SuppressWarnings("all")
     public SGMenu deadPlayersGui(Player player) {
         SGMenu gui = Setup.spiGUI.create("&6Dead players", 5);
         gui.setAutomaticPaginationEnabled(true);
 
-        // Create and start a BukkitRunnable to update the buttons every 2 seconds
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < Setup.DeadPlayers.size(); i++) {
-                    PlayerObj playerObj = Setup.DeadPlayers.get(i);
-                    if (playerObj.GetPlayer().isOnline()) {
-                        SGButton button = head;
-                        button.setIcon(Utilities.GetPlayerSkull(playerObj));
-                        gui.setButton(i / 45, i % 45, button);
-                    }
-                }
-                gui.refreshInventory(player);
+        int page = 0;
+        int slot = 0;
+        for (PlayerObj playerObj : Setup.DeadPlayers) {
+            if (playerObj == null || Setup.DeadPlayers.isEmpty() || playerObj.GetPlayer() == null) {
+                break;
             }
-        }.runTaskTimerAsynchronously(Setup.instance, 0L, 20L); // Run every 2 seconds
+            gui.setButton(page, slot, new CustomSGButton(playerObj, player, gui, page, slot));
 
+            if (slot + 1 > 44) {
+                slot = 0;
+                page++;
+            } else {
+                slot++;
+            }
+        }
         return gui;
     }
 
@@ -84,7 +74,9 @@ public class GraphicalUserInterface {
         });
 
         SGButton deathLocation = new SGButton(Utilities.DeathLocationItem(playerObj)).withListener((InventoryClickEvent event) -> {
-            Utilities.RevivePlayer(viewer, playerObj, playerObj.GetLoc());
+            if (!Utilities.isBelowAir(playerObj)) {
+                Utilities.RevivePlayer(viewer, playerObj, playerObj.GetLoc());
+            }
         });
 
         for (int i = 0; i < 9; i++) {
@@ -101,28 +93,62 @@ public class GraphicalUserInterface {
         return gui;
     }
 
-    static class HeadsInformation {
+    class CustomSGButton extends SGButton implements Listener {
 
-        private final int page;
-        private final int slot;
-        private final PlayerObj pObj;
+        private PlayerObj playerObj;
+        private HumanEntity viewer;
+        private SGMenu gui;
+        private BukkitTask borderRunnable;
+        private int page;
+        private int slot;
 
-        public HeadsInformation(int page, int slot, PlayerObj pObj) {
+        public CustomSGButton(PlayerObj playerObj, HumanEntity viewer, SGMenu gui, int page, int slot) {
+            super(Utilities.GetPlayerSkull(playerObj));
+            this.playerObj = playerObj;
+            this.viewer = viewer;
+            this.gui = gui;
             this.page = page;
             this.slot = slot;
-            this.pObj = pObj;
+            startBorderRunnable();
+            Setup.instance.getServer().getPluginManager().registerEvents(this, Setup.instance);
+
+            // Adding listener
+            withListener((InventoryClickEvent event) -> {
+                if (event.getCurrentItem() == null) {
+                    return;
+                }
+                String playerName = event.getCurrentItem().getItemMeta().getDisplayName();
+                for (PlayerObj deadPlayer : Setup.DeadPlayers) {
+                    if (deadPlayer.GetPlayer().getName().equals(playerName)) {
+                        event.getWhoClicked().openInventory(specificDeadPlayersGui((Player) event.getWhoClicked(), deadPlayer).getInventory());
+                        return;
+                    }
+                }
+            });
         }
 
-        protected int getPage() {
-            return this.page;
+        private void startBorderRunnable() {
+            borderRunnable = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    try {
+                        setIcon(Objects.requireNonNull(Utilities.GetPlayerSkull(playerObj)));
+                        gui.refreshInventory(viewer);
+                    } catch (NullPointerException e) {
+                        borderRunnable.cancel();
+                    }
+                }
+            }.runTaskTimerAsynchronously(Setup.instance, 0L, 20L); // Run every 2 seconds
         }
 
-        protected int getSlot() {
-            return this.slot;
-        }
-
-        protected PlayerObj getPlayerObj() {
-            return this.pObj;
+        @EventHandler
+        public void onPlayerDeath(PlayerDeathEvent event) {
+            if (playerObj.GetUUID().equals(event.getEntity().getUniqueId())) {
+                // Remove the button and cancel the borderRunnable
+                gui.removeButton(this.page, this.slot);
+                borderRunnable.cancel();
+                HandlerList.unregisterAll(this); // Unregister this listener
+            }
         }
     }
 }

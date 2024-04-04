@@ -37,17 +37,9 @@ public class DataManager {
         String fileName = uuid.toString() + ".json";
         Path _path = Path.of(String.valueOf(path), fileName);
 
-        /**try {
-            if (!Files.exists(_path)) {
-                Files.createFile(_path);
-            }
-        } catch (IOException e) {}**/
-
         try (FileWriter fileWriter = new FileWriter(Path.of(String.valueOf(path), fileName).toString())) {
             fileWriter.write(jsonObject.toString());
-            System.out.println("JSON file created successfully: " + fileName);
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -57,7 +49,9 @@ public class DataManager {
             String fileName = Path.of(filePath).getFileName().toString();
             String uuidString = fileName.substring(0, fileName.lastIndexOf('.'));
             UUID uuid = UUID.fromString(uuidString);
-            Object jsonContent = new JSONParser().parse(new FileReader(filePath));
+            FileReader fileReader = new FileReader(filePath);
+            Object jsonContent = new JSONParser().parse(fileReader);
+            fileReader.close();
             JSONObject jsonObject = (JSONObject) jsonContent;
             LocalDateTime deathDate = Utilities.GetDeserializedLocalDateTime((String) jsonObject.get("deathTime"));
             DamageCause damageCause = Utilities.GetDeserializedDamageCause((String) jsonObject.get("damageCause"));
@@ -65,7 +59,6 @@ public class DataManager {
 
             return new PlayerObj(uuid, deathDate, damageCause, location);
         } catch (IOException | ParseException e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -83,19 +76,14 @@ public class DataManager {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
         }
         return playerObjs;
     }
 
     @SuppressWarnings("all")
     public static void deleteJsonFile(String filePath) {
-        try {
-            Files.deleteIfExists(Path.of(filePath));
-            System.out.println("File deleted successfully: " + filePath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        File file = new File(filePath);
+        file.delete();
     }
 
     public static void deleteJsonFiles(List<String> filePaths) {
@@ -111,9 +99,7 @@ public class DataManager {
             JSONObject jsonObject = (JSONObject) jsonContent;
             jsonObject.put(key, value);
             Files.writeString(Path.of(filePath), jsonObject.toString());
-            System.out.println("File edited successfully: " + filePath);
         } catch (IOException | ParseException e) {
-            e.printStackTrace();
         }
     }
 }
