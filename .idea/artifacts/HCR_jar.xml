@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="HCRR:jar">
-    <output-path>D:/TestPaperServer/plugins</output-path>
+  <artifact type="jar" name="HCR:jar">
+    <output-path>$PROJECT_DIR$/../TestServer/plugins</output-path>
     <root id="archive" name="HCRR.jar">
       <element id="directory" name="META-INF">
         <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />

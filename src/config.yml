@@ -1,10 +1,12 @@
+debug: false
+config_gui_shuffle_interval: 10 #20L = 1 second | DON'T INCLUDE THE 'L' AT THE END
 recipe:
+       - AIR
        - DIAMOND
-       - GOLD_INGOT
-       - IRON_INGOT
-       - DIRT
-       - OBSIDIAN
-       - DIRT
+       - AIR
        - DIAMOND
-       - GOLD_INGOT
-       - IRON_INGOT
+       - NETHER_STAR
+       - DIAMOND
+       - AIR
+       - DIAMOND
+       - AIR

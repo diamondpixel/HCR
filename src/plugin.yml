@@ -1,5 +1,26 @@
 name: HardcoreRespawn
 main: takys.Setup
-version: 1.27
-api-version: 1.13
+version: 2.1
+api-version: 1.16
+
+commands:
+  hcr:
+    description: HCR main command for managing revival tokens and recipes
+    usage: /hcr <subcommand>
+    permission: hcr.use
+    permission-message: You don't have permission to use this command.
+
+permissions:
+  hcr.use:
+    description: Allows use of the base HCR command
+    default: op
+  hcr.givetoken:
+    description: Allows giving revival tokens to players
+    default: op
+  hcr.configurerecipe:
+    description: Allows configuring the revival recipe
+    default: op
+  hcr.reload:
+    description: Reloads the plugin
+    default: op
 
