@@ -98,7 +98,7 @@ Please open an issue first to discuss major changes.
 
 ## 📝 License
 
-Distributed under the **MIT** license. See `LICENSE` for more information.
+Distributed under the **MIT** license.
 
 ---
 
