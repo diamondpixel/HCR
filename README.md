@@ -103,5 +103,5 @@ Distributed under the **MIT** license. See `LICENSE` for more information.
 ---
 
 <p align="center">
-  Made with ❤️  &  ☕  by **takys**
+  Made with ❤️  &  ☕  by **(diamondpixel/Liparakis/Takys)**
 </p>
