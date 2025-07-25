@@ -10,13 +10,16 @@ import takys.Files.DataManager;
 import takys.GUIs.DeadPlayersGUI;
 import takys.GUIs.RecipeConfiguratorGUI;
 import takys.Objects.PlayerObj;
-import takys.SkullCreator.SkullCreator;
+import com.skullcreator.SkullCreator;
+import takys.Utilities.SafeTeleportManager;
+import takys.Utilities.Utilities;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Setup extends JavaPlugin {
 
@@ -39,7 +42,7 @@ public class Setup extends JavaPlugin {
 
         if (!(new File(this.getDataFolder() + "/DeadPlayers/").exists()))
             new File(this.getDataFolder() + "/DeadPlayers/").mkdirs();
-        DeadPlayers = dataManager.readJsonFiles(this.getDataFolder() + "/DeadPlayers/");
+        DeadPlayers = new CopyOnWriteArrayList<>(dataManager.readJsonFiles(this.getDataFolder() + "/DeadPlayers/"));
 
         spiGUI = new SpiGUI(this);
 
@@ -60,6 +63,7 @@ public class Setup extends JavaPlugin {
                         -> value.stopAnimation());
         Utilities.clearCaches();
         Utilities.unloadRecipe(Bukkit.getOnlinePlayers());
+        SafeTeleportManager.stopAllTimers();
         SkullCreator.clearCache();
         this.saveDefaultConfig();
     }

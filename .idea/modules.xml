@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/HCRR.iml" filepath="$PROJECT_DIR$/HCRR.iml" />
+      <module fileurl="file://$PROJECT_DIR$/HCR.iml" filepath="$PROJECT_DIR$/HCR.iml" />
     </modules>
   </component>
 </project>

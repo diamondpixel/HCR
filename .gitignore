@@ -1,3 +1,27 @@
 # Project exclude paths
+# General build output
 /target/
+build/
+# Maven wrapper binaries
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE project files
 /.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+
+# OS / tooling clutter
+*.log
+*.tmp
+*.bak
+Thumbs.db
+.DS_Store
+
+# Java binaries & archives
+*.class
+*.jar
+*.war
+*.ear
