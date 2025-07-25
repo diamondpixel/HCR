@@ -1,6 +1,6 @@
 name: HardcoreRespawn
 main: takys.Setup
-version: 2.1
+version: 3.0.1
 api-version: 1.16
 
 commands:

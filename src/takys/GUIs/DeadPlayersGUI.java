@@ -18,12 +18,12 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import takys.Objects.PlayerObj;
 import takys.Setup;
-import takys.Utilities;
+import takys.Utilities.SafeTeleportManager;
+import takys.Utilities.Utilities;
 
 import java.io.File;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
 
 public class DeadPlayersGUI {
     private static final int SLOTS_PER_PAGE = 45;
@@ -31,8 +31,17 @@ public class DeadPlayersGUI {
     private static final int SPECIFIC_GUI_ROWS = 1;
     private static final long REFRESH_INTERVAL = 20L; // 1 second
 
-    // Cache for active buttons to prevent memory leaks
+    // Static constants for button positions
+    private static final int BACK_BUTTON_SLOT = 0;
+    private static final int BED_BUTTON_SLOT = 3;
+    private static final int WORLD_SPAWN_SLOT = 4;
+    private static final int LOOKING_LOCATION_SLOT = 5;
+    private static final int DEATH_LOCATION_SLOT = 6;
+
+    // Use more efficient data structures
     private final Map<String, CustomSGButton> activeButtons = new ConcurrentHashMap<>();
+    private final Set<UUID> trackedViewers = ConcurrentHashMap.newKeySet();
+    private BukkitTask centralRefreshTask;
 
     public SGMenu deadPlayersGui(Player player) {
         SGMenu gui = Setup.spiGUI.create("&6Dead players", GUI_ROWS);
@@ -40,6 +49,12 @@ public class DeadPlayersGUI {
 
         // Clear any existing buttons for this player
         clearActiveButtons(player);
+
+        // Track viewer and ensure central refresh task is running
+        trackedViewers.add(player.getUniqueId());
+        if (centralRefreshTask == null || centralRefreshTask.isCancelled()) {
+            startCentralRefreshTask();
+        }
 
         int page = 0;
         int slot = 0;
@@ -67,32 +82,31 @@ public class DeadPlayersGUI {
     }
 
     public SGMenu specificDeadPlayersGui(Player viewer, PlayerObj playerObj) {
-        Player player = Bukkit.getPlayer(playerObj.getUUID());
-        if (player == null) {
-            return null; // Handle case where player is no longer online
+        Player targetPlayer = Bukkit.getPlayer(playerObj.getUUID());
+        if (targetPlayer == null) {
+            return null;
         }
 
-        SGMenu gui = Setup.spiGUI.create("&c" + player.getName(), SPECIFIC_GUI_ROWS);
+        SGMenu gui = Setup.spiGUI.create("&c" + targetPlayer.getName(), SPECIFIC_GUI_ROWS);
 
-        // Create buttons with optimized event handling
-        SGButton backArrow = createBackButton(viewer);
-        SGButton bed = createBedButton(viewer, playerObj, player);
-        SGButton worldSpawn = createWorldSpawnButton(viewer, playerObj);
-        SGButton lookingLocation = createLookingLocationButton(viewer, playerObj);
-        SGButton deathLocation = createDeathLocationButton(viewer, playerObj);
-
-        // Fill with glass panes
+        // Fill with glass panes first
         fillWithGlassPanes(gui);
 
-        // Set functional buttons
-        gui.setButton(0, backArrow);
-        gui.setButton(3, bed);
-        gui.setButton(4, worldSpawn);
-        gui.setButton(5, lookingLocation);
-        gui.setButton(6, deathLocation);
-        gui.setAutomaticPaginationEnabled(false);
+        // Then set functional buttons (this will overwrite the glass panes in those slots)
+        setupSpecificPlayerButtons(gui, viewer, playerObj, targetPlayer);
 
+        gui.setAutomaticPaginationEnabled(false);
         return gui;
+    }
+
+
+
+    private void setupSpecificPlayerButtons(SGMenu gui, Player viewer, PlayerObj playerObj, Player targetPlayer) {
+        gui.setButton(BACK_BUTTON_SLOT, createBackButton(viewer));
+        gui.setButton(BED_BUTTON_SLOT, createBedButton(viewer, playerObj, targetPlayer));
+        gui.setButton(WORLD_SPAWN_SLOT, createWorldSpawnButton(viewer, playerObj));
+        gui.setButton(LOOKING_LOCATION_SLOT, createLookingLocationButton(viewer, playerObj));
+        gui.setButton(DEATH_LOCATION_SLOT, createDeathLocationButton(viewer, playerObj));
     }
 
     private SGButton createBackButton(Player viewer) {
@@ -100,10 +114,10 @@ public class DeadPlayersGUI {
                 .withListener(event -> viewer.openInventory(deadPlayersGui(viewer).getInventory()));
     }
 
-    private SGButton createBedButton(Player viewer, PlayerObj playerObj, Player player) {
+    private SGButton createBedButton(Player viewer, PlayerObj playerObj, Player targetPlayer) {
         return new SGButton(Utilities.bedItem(playerObj.getUUID()))
                 .withListener(event -> {
-                    Location bedLocation = player.getBedSpawnLocation();
+                    Location bedLocation = targetPlayer.getBedSpawnLocation();
                     if (bedLocation != null) {
                         Utilities.revivePlayer(viewer, playerObj, bedLocation);
                     }
@@ -113,31 +127,26 @@ public class DeadPlayersGUI {
     private SGButton createWorldSpawnButton(Player viewer, PlayerObj playerObj) {
         return new SGButton(Utilities.worldSpawnItem(playerObj.getUUID()))
                 .withListener(event -> {
-                    File file = new File("server.properties");
-                    String worldName = Utilities.getString("level-name", file);
-                    Location spawnLocation = Bukkit.getWorld(worldName).getSpawnLocation();
-                    Utilities.revivePlayer(viewer, playerObj, spawnLocation);
+                    Location spawnLocation = getWorldSpawnLocation();
+                    if (spawnLocation != null) {
+                        Utilities.revivePlayer(viewer, playerObj, spawnLocation);
+                    }
                 });
     }
 
     private SGButton createLookingLocationButton(Player viewer, PlayerObj playerObj) {
         return new SGButton(Utilities.eyeLocationItem(playerObj.getUUID()))
                 .withListener(event -> {
-                    Location clickerLoc = event.getWhoClicked().getLocation();
-                    Location targetLoc = clickerLoc.add(clickerLoc.getDirection().multiply(2));
-                    targetLoc.setY(targetLoc.getY() + 1.0D);
-                    Vector direction = targetLoc.clone().subtract(event.getWhoClicked().getEyeLocation()).toVector();
-                    targetLoc.setDirection(direction);
-                    Utilities.revivePlayer(viewer, playerObj, targetLoc);
+                    Location targetLocation = calculateLookingLocation(event.getWhoClicked().getLocation());
+                    Utilities.revivePlayer(viewer, playerObj, targetLocation);
                 });
     }
 
     private SGButton createDeathLocationButton(Player viewer, PlayerObj playerObj) {
         return new SGButton(Utilities.deathLocationItem(playerObj))
                 .withListener(event -> {
-                    if (!Utilities.isBelowAir(playerObj)) {
-                        Utilities.revivePlayer(viewer, playerObj, playerObj.getLoc());
-                    }
+                    Location safeLocation = SafeTeleportManager.findSafeTeleportLocation(playerObj);
+                    Utilities.revivePlayer(viewer, playerObj, safeLocation);
                 });
     }
 
@@ -153,6 +162,8 @@ public class DeadPlayersGUI {
         }
     }
 
+    // Helper methods for better code organization
+
     private void clearActiveButtons(Player player) {
         String playerPrefix = player.getUniqueId() + ":";
         activeButtons.entrySet().removeIf(entry -> {
@@ -164,23 +175,64 @@ public class DeadPlayersGUI {
         });
     }
 
-    /**
-     * Perhaps future use
-     * */
-    public void cleanup() {
-        // Clean up all active buttons when plugin is disabled
-        activeButtons.values().forEach(CustomSGButton::cleanup);
-        activeButtons.clear();
+    private String createButtonKey(UUID playerId, int page, int slot) {
+        return playerId + ":" + page + ":" + slot;
     }
 
+    private Location getWorldSpawnLocation() {
+        try {
+            File serverProperties = new File("server.properties");
+            String worldName = Utilities.getString("level-name", serverProperties);
+            return Bukkit.getWorld(worldName).getSpawnLocation();
+        } catch (Exception e) {
+            // Fallback to default world spawn
+            return Bukkit.getWorlds().get(0).getSpawnLocation();
+        }
+    }
+
+    private Location calculateLookingLocation(Location clickerLocation) {
+        Location targetLocation = clickerLocation.add(clickerLocation.getDirection().multiply(2));
+        targetLocation.setY(targetLocation.getY() + 1.0D);
+
+        Vector direction = targetLocation.clone()
+                .subtract(clickerLocation.add(0, 1.62, 0)) // Eye height offset
+                .toVector();
+
+        targetLocation.setDirection(direction);
+        return targetLocation;
+    }
+
+    private void startCentralRefreshTask() {
+        centralRefreshTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (activeButtons.isEmpty()) {
+                    cancel();
+                    return;
+                }
+                activeButtons.values().forEach(CustomSGButton::updateIcon);
+            }
+        }.runTaskTimerAsynchronously(Setup.instance, 0L, REFRESH_INTERVAL);
+    }
+
+    public void cleanup() {
+        activeButtons.values().forEach(CustomSGButton::cleanup);
+        activeButtons.clear();
+        trackedViewers.clear();
+
+        if (centralRefreshTask != null && !centralRefreshTask.isCancelled()) {
+            centralRefreshTask.cancel();
+        }
+    }
+
+    // Inner class for custom button behavior
     class CustomSGButton extends SGButton implements Listener {
         private final PlayerObj playerObj;
         private final HumanEntity viewer;
         private final SGMenu gui;
         private final int page;
         private final int slot;
-        private BukkitTask refreshTask;
-        private boolean isActive = true;
+        private volatile boolean isActive = true;
 
         public CustomSGButton(PlayerObj playerObj, HumanEntity viewer, SGMenu gui, int page, int slot) {
             super(Utilities.getPlayerSkull(playerObj));
@@ -190,20 +242,17 @@ public class DeadPlayersGUI {
             this.page = page;
             this.slot = slot;
 
-            startRefreshTask();
             Setup.instance.getServer().getPluginManager().registerEvents(this, Setup.instance);
-
-            // Add click listener
             withListener(this::handleClick);
         }
 
         private void handleClick(InventoryClickEvent event) {
-            if (event.getCurrentItem() == null || event.getCurrentItem().getItemMeta() == null) {
+            if (!isValidClick(event)) {
                 return;
             }
 
-            String playerName = event.getCurrentItem().getItemMeta().getDisplayName();
-            PlayerObj deadPlayer = findDeadPlayerByName(playerName);
+            String displayName = event.getCurrentItem().getItemMeta().getDisplayName();
+            PlayerObj deadPlayer = findDeadPlayerByDisplayName(displayName);
 
             if (deadPlayer != null) {
                 Player clicker = (Player) event.getWhoClicked();
@@ -214,7 +263,12 @@ public class DeadPlayersGUI {
             }
         }
 
-        private PlayerObj findDeadPlayerByName(String displayName) {
+        private boolean isValidClick(InventoryClickEvent event) {
+            return event.getCurrentItem() != null &&
+                    event.getCurrentItem().getItemMeta() != null;
+        }
+
+        private PlayerObj findDeadPlayerByDisplayName(String displayName) {
             return Setup.DeadPlayers.stream()
                     .filter(Objects::nonNull)
                     .filter(deadPlayer -> deadPlayer.getPlayer() != null)
@@ -223,43 +277,35 @@ public class DeadPlayersGUI {
                     .orElse(null);
         }
 
-        private void startRefreshTask() {
-            refreshTask = new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (!isActive) {
-                        cancel();
-                        return;
-                    }
-
-                    try {
-                        if (playerObj.getPlayer() != null) {
-                            setIcon(Objects.requireNonNull(Utilities.getPlayerSkull(playerObj)));
-                            gui.refreshInventory(viewer);
-                        } else {
-                            cleanup();
-                        }
-                    } catch (Exception e) {
-                        cleanup();
-                    }
+        public void updateIcon() {
+            if (!isActive) {
+                return;
+            }
+            try {
+                if (playerObj.getPlayer() != null) {
+                    setIcon(Objects.requireNonNull(Utilities.getPlayerSkull(playerObj)));
+                    gui.refreshInventory(viewer);
+                } else {
+                    cleanup();
                 }
-            }.runTaskTimerAsynchronously(Setup.instance, 0L, REFRESH_INTERVAL);
+            } catch (Exception ignored) {
+                cleanup();
+            }
         }
 
         @EventHandler
         public void onPlayerDeath(PlayerDeathEvent event) {
-            if (playerObj.getUUID().equals(event.getEntity().getUniqueId())) {
-                gui.removeButton(this.page, this.slot);
+            if (isActive && playerObj.getUUID().equals(event.getEntity().getUniqueId())) {
+                gui.removeButton(page, slot);
                 cleanup();
             }
         }
 
         public void cleanup() {
-            isActive = false;
-            if (refreshTask != null && !refreshTask.isCancelled()) {
-                refreshTask.cancel();
+            if (isActive) {
+                isActive = false;
+                HandlerList.unregisterAll(this);
             }
-            HandlerList.unregisterAll(this);
         }
     }
 }

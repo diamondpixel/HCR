@@ -13,11 +13,10 @@ A powerful, Paper/Spigot plugin that re-imagines the **Hardcore** experience –
 | 🖼️ **Beautiful GUIs** | Paginated list of dead players with custom skulls, smooth animations and one-click revive destinations (bed, spawn, eye-look, death-coords). |
 | ⚡ **Zero-Lag Utilities** | Optimised caching, asynchronous tasks and more to ensure TPS friendly performance. |
 | 🔄 **Hot Reload** | Change the recipe or config on the fly – `/hcr reload` seamlessly unloads & registers new recipes for every online player. |
-
-## 🗒️ TODO
-- ⚙️ **Optimise revive menu**
-- 📦 **Place player's loot in a chest at death location**
-- 🛡️ **Safe teleporting that avoids water or void on respawn**
+| ⚰️ **Death Chests** | Automatically stores the victim's items in an obsidian-protected chest near the death spot – search radius fully configurable. |
+| 🪂 **Safe Teleport** | Intelligent teleporter finds the closest solid ground (no water/void) or creates a fallback obsidian platform when reviving. |
+| ⏱️ **Platform Timer** | Obsidian platform spawns under the revived player and despawns after they leave, with an in-actionbar progress bar, colour shift & tick sounds. |
+| ✨ **Auto Potion Effects** | Configurable resistance / regen / absorption etc. are re-applied every second while the player stands on the platform. |
 
 ---
 
@@ -51,9 +50,15 @@ A powerful, Paper/Spigot plugin that re-imagines the **Hardcore** experience –
 `config.yml` ships with sensible defaults but is 100 % editable:
 
 ```yml
-debug: false                 # Extra console spam for troubleshooting
+
+debug: false # Extra console spam for troubleshooting
 config_gui_shuffle_interval: 10 # How often the recipe GUI glass panes shuffle (ticks)
-recipe:                       # 3×3 crafting grid, top-left → bottom-right
+effect_duration: 1200 # Revival effect's duration
+delete_platform: true # Should we delete platform after revive?
+death_chest: true # Should we store items in chest after player death?
+death_chest_search_radius: 20 # How far should we search for a valid chest location before giving up.
+safe_teleport_search_radius: 20 # How far should we search for a valid teleport location before giving up.
+recipe: # 3×3 crafting grid, top-left → bottom-right
   - AIR
   - DIAMOND
   - AIR

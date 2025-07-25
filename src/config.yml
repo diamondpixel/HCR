@@ -1,6 +1,11 @@
-debug: false
-config_gui_shuffle_interval: 10 #20L = 1 second | DON'T INCLUDE THE 'L' AT THE END
-recipe:
+debug: false # Extra console spam for troubleshooting
+config_gui_shuffle_interval: 10 # How often the recipe GUI glass panes shuffle (ticks)
+effect_duration: 1200 # Revival effect's duration
+delete_platform: true # Should we delete platform after revive?
+death_chest: true # Should we store items in chest after player death?
+death_chest_search_radius: 20 # How far should we search for a valid chest location before giving up.
+safe_teleport_search_radius: 20 # How far should we search for a valid teleport location before giving up.
+recipe: # 3×3 crafting grid, top-left → bottom-right
        - AIR
        - DIAMOND
        - AIR
